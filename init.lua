@@ -52,6 +52,7 @@ vim.o.scrolloff = 10
 
 vim.o.confirm = true -- See :help 'confirm'
 
+vim.o.termguicolors = true
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 -- Clear highlights on search when pressing <Esc> in normal mode
