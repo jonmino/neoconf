@@ -4,95 +4,57 @@
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
--- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = true
+vim.opt.termguicolors = true
 
 -- [[ Setting options ]]
--- Set highlight on serach
-vim.opt.hlsearch = true
-
--- Backspace
+-- See `:help vim.opt`
+vim.opt.hlsearch = true -- search highlights
+vim.opt.mouse = 'a' -- activate mouse
+vim.opt.showmode = false -- mode displayed in stausline
+vim.schedule(function() -- Shared clipboard
+    vim.opt.clipboard = 'unnamedplus'
+end)
+vim.opt.breakindent = true
+vim.opt.undofile = true
+vim.opt.ignorecase = true -- case insensitive search
+vim.opt.smartcase = true -- smart case sensitivity for search
+vim.opt.signcolumn = 'yes'
 vim.opt.backspace = 'indent,eol,start'
+vim.opt.number = true -- Line numbers
+vim.opt.relativenumber = true -- change to relative numbers
+vim.opt.wrap = false
+vim.opt.colorcolumn = '81' -- Show length indicator
+vim.opt.cursorline = true -- highlight line cursor is on
+vim.opt.inccommand = 'split' -- preview substitutions while typing
 
--- Make line numbers default
-vim.opt.number = true
--- You can also add relative line numbers, to help with jumping.
---  Experiment for yourself to see if you like it!
-vim.opt.relativenumber = true
+vim.opt.updatetime = 250
+vim.opt.timeoutlen = 750
 
--- Enable mouse mode, can be useful for resizing splits for example!
-vim.opt.mouse = 'a'
+vim.opt.splitright = true
+vim.opt.splitbelow = true
 
--- Don't show the mode, since it's already in the status line
-vim.opt.showmode = false
-
--- Tabs & indentation
 vim.opt.tabstop = 8 -- Amount of Spaces per Tab
 vim.opt.shiftwidth = 4 -- Amount of Spaces per indentation
 vim.opt.softtabstop = 4
 vim.opt.expandtab = true -- Replace TAB with Spaces
 vim.opt.autoindent = true
-vim.opt.list = true -- Show <TAB> and <EOL>
 
--- Line wrapping
-vim.opt.wrap = false
-
--- Indicator for line length
-vim.opt.colorcolumn = '81'
-
--- Sync clipboard between OS and Neovim.
-vim.schedule(function()
-    vim.opt.clipboard = 'unnamedplus'
-end)
-
--- Enable break indent
-vim.opt.breakindent = true
-
--- Save undo history
-vim.opt.undofile = true
-
--- Case-insensitive searching UNLESS \C or one or more capital letters in the search term
-vim.opt.ignorecase = true
-vim.opt.smartcase = true
-
--- Keep signcolumn on by default
-vim.opt.signcolumn = 'yes'
-
--- Decrease update time
-vim.opt.updatetime = 250
-
--- Decrease mapped sequence wait time
-vim.opt.timeoutlen = 750
-
--- Configure how new splits should be opened
-vim.opt.splitright = true
-vim.opt.splitbelow = true
-
--- Sets how neovim will display certain whitespace characters in the editor.
---  See `:help 'list'`
---  and `:help 'listchars'`
-vim.opt.list = true
+vim.opt.list = true -- Adjust how some whitespace characters are displayed
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣', eol = '↵' }
-
--- Preview substitutions live, as you type!
-vim.opt.inccommand = 'split'
-
--- Show which line your cursor is on
-vim.opt.cursorline = true
 
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.opt.scrolloff = 10
 
-vim.opt.termguicolors = true
-
 -- [[ Basic Keymaps ]]
+--  See `:help vim.keymap.set()`
 -- Clear highlights on search when pressing <Esc> in normal mode
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
 -- Diagnostic keymaps
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
--- TIP: Disable arrow keys in normal mode
+-- TIP: Disable arrow keys in normal and visual mode
 vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
 vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
 vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
@@ -110,6 +72,7 @@ vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower win
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
 vim.keymap.set('n', 's', '<Nop>') -- Disable due to conflict with surround
+vim.keymap.set('v', 's', '<Nop>')
 
 -- [[ Basic Autocommands ]]
 -- Highlight when yanking (copying) text
@@ -200,6 +163,7 @@ require('lazy').setup({
                 { '<leader>w', group = '[W]orkspace' },
                 { '<leader>t', group = '[T]oggle' },
                 { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
+                { 's', group = '[S]ourround', mode = { 'n', 'v' } },
             },
         },
     },
@@ -262,16 +226,9 @@ require('lazy').setup({
             vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
             vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
             vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+            vim.keymap.set('n', '<leader>/', builtin.current_buffer_fuzzy_find, { desc = '[/] Fuzzily search in current buffer' })
 
-            -- Slightly advanced example of overriding default behavior and theme
-            vim.keymap.set('n', '<leader>/', function()
-                -- You can pass additional configuration to Telescope to change the theme, layout, etc.
-                builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
-                    winblend = 10,
-                    previewer = false,
-                })
-            end, { desc = '[/] Fuzzily search in current buffer' })
-
+            -- You can pass additional configuration to Telescope to change the theme, layout, etc.
             -- It's also possible to pass additional configuration options.
             --  See `:help telescope.builtin.live_grep()` for information about particular keys
             vim.keymap.set('n', '<leader>s/', function()
@@ -297,7 +254,7 @@ require('lazy').setup({
         opts = {
             library = {
                 -- Load luvit types when the `vim.uv` word is found
-                { path = 'luvit-meta/library', words = { 'vim%.uv' } },
+                { path = '${3rd}/luv/library', words = { 'vim%.uv' } },
             },
         },
     },
@@ -377,6 +334,7 @@ require('lazy').setup({
                     --
                     -- When you move your cursor, the highlights will be cleared (the second autocommand).
                     local client = vim.lsp.get_client_by_id(event.data.client_id)
+                    -- TODO: for nvim-0.11 this will change to client:supports_method
                     if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight) then
                         local highlight_augroup = vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
                         vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
@@ -412,15 +370,34 @@ require('lazy').setup({
                 end,
             })
 
-            -- Change diagnostic symbols in the sign column (gutter)
-            if vim.g.have_nerd_font then
-                local signs = { ERROR = '', WARN = '', INFO = '', HINT = '' }
-                local diagnostic_signs = {}
-                for type, icon in pairs(signs) do
-                    diagnostic_signs[vim.diagnostic.severity[type]] = icon
-                end
-                vim.diagnostic.config { signs = { text = diagnostic_signs } }
-            end
+            -- Diagnostic Config
+            -- See :help vim.diagnostic.Opts
+            vim.diagnostic.config {
+                severity_sort = true,
+                float = { border = 'rounded', source = 'if_many' },
+                underline = { severity = vim.diagnostic.severity.ERROR },
+                signs = vim.g.have_nerd_font and {
+                    text = {
+                        [vim.diagnostic.severity.ERROR] = '󰅚 ',
+                        [vim.diagnostic.severity.WARN] = '󰀪 ',
+                        [vim.diagnostic.severity.INFO] = '󰋽 ',
+                        [vim.diagnostic.severity.HINT] = '󰌶 ',
+                    },
+                } or {},
+                virtual_text = {
+                    source = 'if_many',
+                    spacing = 2,
+                    format = function(diagnostic)
+                        local diagnostic_message = {
+                            [vim.diagnostic.severity.ERROR] = diagnostic.message,
+                            [vim.diagnostic.severity.WARN] = diagnostic.message,
+                            [vim.diagnostic.severity.INFO] = diagnostic.message,
+                            [vim.diagnostic.severity.HINT] = diagnostic.message,
+                        }
+                        return diagnostic_message[diagnostic.severity]
+                    end,
+                },
+            }
 
             -- LSP servers and clients are able to communicate to each other what features they support.
             --  By default, Neovim doesn't support everything that is in the LSP specification.
@@ -495,6 +472,8 @@ require('lazy').setup({
             require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
             require('mason-lspconfig').setup {
+                ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
+                automatic_installation = false,
                 handlers = {
                     function(server_name)
                         local server = servers[server_name] or {}
@@ -572,12 +551,12 @@ require('lazy').setup({
                     -- `friendly-snippets` contains a variety of premade snippets.
                     --    See the README about individual language/framework/plugin snippets:
                     --    https://github.com/rafamadriz/friendly-snippets
-                    -- {
-                    --   'rafamadriz/friendly-snippets',
-                    --   config = function()
-                    --     require('luasnip.loaders.from_vscode').lazy_load()
-                    --   end,
-                    -- },
+                    {
+                        'rafamadriz/friendly-snippets',
+                        config = function()
+                            require('luasnip.loaders.from_vscode').lazy_load()
+                        end,
+                    },
                 },
             },
             'saadparwaiz1/cmp_luasnip',
@@ -587,6 +566,7 @@ require('lazy').setup({
             --  into multiple repos for maintenance purposes.
             'hrsh7th/cmp-nvim-lsp',
             'hrsh7th/cmp-path',
+            'hrsh7th/cmp-nvim-lsp-signature-help',
         },
         config = function()
             -- See `:help cmp`
@@ -653,6 +633,7 @@ require('lazy').setup({
                     { name = 'nvim_lsp' },
                     { name = 'luasnip' },
                     { name = 'path' },
+                    { name = 'nvim_lsp_signature_help' },
                 },
             }
         end,
@@ -669,14 +650,42 @@ require('lazy').setup({
                     cmp = true,
                     gitsigns = true,
                     fidget = true,
+                    indent_blankline = {
+                        enabled = true,
+                        scope_color = 'sapphire',
+                        colored_indent_levels = false,
+                    },
                     mason = true,
                     mini = {
                         enabled = true,
                     },
+                    native_lsp = {
+                        enabled = true,
+                        virtual_text = {
+                            errors = { 'italic' },
+                            hints = { 'italic' },
+                            warnings = { 'italic' },
+                            information = { 'italic' },
+                            ok = { 'italic' },
+                        },
+                        underlines = {
+                            errors = { 'underline' },
+                            hints = { 'underline' },
+                            warnings = { 'underline' },
+                            information = { 'underline' },
+                            ok = { 'underline' },
+                        },
+                        inlay_hints = {
+                            background = true,
+                        },
+                    },
+                    neotree = true,
+                    rainbow_delimiters = true,
                     telescope = {
                         enabled = true,
                     },
                     treesitter = true,
+                    treesitter_context = true,
                     which_key = true,
                 },
             }
@@ -691,7 +700,7 @@ require('lazy').setup({
     },
 
     -- Highlight todo, notes, etc in comments
-    { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
+    { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = true } },
 
     { -- Collection of various small independent plugins/modules
         'echasnovski/mini.nvim',
@@ -748,24 +757,13 @@ require('lazy').setup({
             },
             indent = { enable = true, disable = { 'ruby' } },
         },
-        -- There are additional nvim-treesitter modules that you can use to interact
-        -- with nvim-treesitter. You should go explore a few and see what interests you:
-        --
-        --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
-        --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
-        --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
     },
+    -- Show Context above
+    { 'nvim-treesitter/nvim-treesitter-context', dependencies = { 'nvim-treesitter/nvim-treesitter' } },
+    -- Rainbow Brackets etc
+    { 'HiPhish/rainbow-delimiters.nvim', dependencies = { 'nvim-treesitter/nvim-treesitter' } },
+    -- There is more treesitter addons which could be added here
 
-    -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
-    -- init.lua. If you want these files, they are in the repository, so you can just download them and
-    -- place them in the correct locations.
-
-    -- NOTE: Next step on your Neovim journey: Add/Configure additional plugins for Kickstart
-    --
-    --  Here are some example plugins that I've included in the Kickstart repository.
-    --  Uncomment any of the lines below to enable them (you will need to restart nvim).
-    --
-    -- require 'kickstart.plugins.debug',
     require 'kickstart.plugins.indent_line',
     require 'kickstart.plugins.lint',
     require 'kickstart.plugins.autopairs',
