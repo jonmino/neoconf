@@ -417,6 +417,11 @@ require('lazy').setup({
             --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
             local servers = {
                 -- clangd = {},
+                -- black = {
+                --     settings = {
+                --         linelength = 79,
+                --     },
+                -- },
                 -- gopls = {},
                 -- pyright = {},
                 -- rust_analyzer = {},
@@ -428,7 +433,9 @@ require('lazy').setup({
                 -- But for many setups, the LSP (`ts_ls`) will work just fine
                 -- ts_ls = {},
 
+                -- Python
                 jedi_language_server = {},
+                ruff = {},
 
                 lua_ls = {
                     -- cmd = { ... },
@@ -468,8 +475,6 @@ require('lazy').setup({
             -- for you, so that they are available from within Neovim.
             local ensure_installed = vim.tbl_keys(servers or {})
             vim.list_extend(ensure_installed, {
-                'black', -- Python formatter
-                'ruff', -- Python linter
                 'stylua', -- Used to format Lua code
             })
             require('mason-tool-installer').setup { ensure_installed = ensure_installed }
@@ -511,7 +516,7 @@ require('lazy').setup({
                 -- Disable "format_on_save lsp_fallback" for languages that don't
                 -- have a well standardized coding style. You can add additional
                 -- languages here or re-enable it for the disabled ones.
-                local disable_filetypes = { c = true, cpp = true }
+                local disable_filetypes = { c = true, cpp = true, python = true }
                 local lsp_format_opt
                 if disable_filetypes[vim.bo[bufnr].filetype] then
                     lsp_format_opt = 'never'
