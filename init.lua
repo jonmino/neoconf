@@ -433,10 +433,18 @@ require('lazy').setup({
                 -- But for many setups, the LSP (`ts_ls`) will work just fine
                 -- ts_ls = {},
 
+                -- Latex / Markdown
+                ltex = {},
+                latexindent = {},
+                vale = {},
+                marksman = {},
+                markdownlint = {},
+
                 -- Python
                 jedi_language_server = {},
                 ruff = {},
 
+                -- Lua
                 lua_ls = {
                     -- cmd = { ... },
                     -- filetypes = { ... },
@@ -458,6 +466,7 @@ require('lazy').setup({
                         },
                     },
                 },
+                stylua = {},
             }
 
             -- Ensure the servers and tools above are installed
@@ -474,9 +483,7 @@ require('lazy').setup({
             -- You can add other tools here that you want Mason to install
             -- for you, so that they are available from within Neovim.
             local ensure_installed = vim.tbl_keys(servers or {})
-            vim.list_extend(ensure_installed, {
-                'stylua', -- Used to format Lua code
-            })
+            -- vim.list_extend(ensure_installed, {})
             require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
             require('mason-lspconfig').setup {
