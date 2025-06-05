@@ -189,13 +189,14 @@ return {
                 -- Latex / Markdown
                 ltex = {},
                 latexindent = {},
-                vale = {},
                 marksman = {},
-                markdownlint = {},
 
                 -- Python
                 jedi_language_server = {},
-                ruff = {},
+                ruff = {}, -- Formatter
+
+                -- Toml
+                taplo = {},
 
                 -- Lua
                 lua_ls = {
