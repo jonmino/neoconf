@@ -10,6 +10,7 @@ vim.o.termguicolors = true
 -- [[ Setting options ]]
 -- See `:help vim.o`
 vim.o.hlsearch = true -- search highlights
+vim.o.incsearch = true -- live search highlights
 vim.o.mouse = 'a' -- activate mouse
 vim.o.showmode = false -- mode displayed in stausline
 vim.schedule(function() -- Shared clipboard
@@ -22,7 +23,7 @@ vim.o.smartcase = true -- smart case sensitivity for search
 vim.o.signcolumn = 'yes'
 vim.o.backspace = 'indent,eol,start'
 vim.o.number = true -- Line numbers
-vim.o.relativenumber = true -- change to relative numbers
+vim.o.relativenumber = false -- change to relative numbers
 vim.o.wrap = false
 vim.o.colorcolumn = '81' -- Show length indicator
 vim.o.cursorline = true -- highlight line cursor is on
@@ -111,8 +112,8 @@ require('lazy').setup({
 
     -- Modular config which imports settings and plugins from subdirectories
     --  ee `:help lazy.nvim-🔌-plugin-spec` for help
-    { import = 'kickstart.plugins' },
-    { import = 'custom.plugins' },
+    { import = 'jonmino.settings' },
+    { import = 'jonmino.plugins' },
 }, {
     ui = {
         -- If you are using a Nerd Font: set icons to an empty table which will use the
