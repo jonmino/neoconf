@@ -193,7 +193,14 @@ return {
 
                 -- Python
                 jedi_language_server = {},
-                ruff = {}, -- Formatter
+                ruff = {}, -- Formatting, Linting
+                basedpyright = { -- Static Type Checker
+                    settings = {
+                        basedpyright = {
+                            disableLanguageServices = true,
+                        },
+                    },
+                },
 
                 -- Toml
                 taplo = {},
