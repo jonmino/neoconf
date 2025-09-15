@@ -5,9 +5,33 @@ return {
     priority = 1000, -- Make sure to load this before all the other start plugins.
     init = function()
         require('catppuccin').setup {
+            flavour = 'mocha',
             transparent_background = true,
+            float = {
+                transparent = false,
+                solid = false,
+            },
+            dim_inactive = {
+                enabled = true, -- dims the background color of inactive window
+                shade = 'dark',
+                percentage = 0.15, -- percentage of the shade to apply to the inactive window
+            },
+            styles = {
+                comments = { 'italic' },
+                conditionals = { 'italic' },
+                keywords = { 'bold' },
+                loops = {},
+                functions = {},
+                strings = {},
+                variables = {},
+                numbers = {},
+                booleans = {},
+                properties = {},
+                types = {},
+                operators = {},
+            },
             integrations = {
-                cmp = true,
+                blink_cmp = true,
                 gitsigns = true,
                 fidget = true,
                 indent_blankline = {
@@ -49,12 +73,6 @@ return {
                 which_key = true,
             },
         }
-        -- Load the colorscheme here.
-        -- Like many other themes, this one has different styles, and you could load
-        -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-        vim.cmd.colorscheme 'catppuccin-mocha'
-
-        -- You can configure highlights by doing something like:
-        vim.cmd.hi 'Comment gui=none'
+        vim.cmd.colorscheme 'catppuccin'
     end,
 }

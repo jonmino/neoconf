@@ -1,6 +1,6 @@
 -- Import Plugins with little to no configuration here
 return {
-    'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
+    { 'NMAC427/guess-indent.nvim', opts = {} }, -- Detect tabstop and shiftwidth automatically
     -- Highlight todo, notes, etc in comments
     { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = true } },
 }
