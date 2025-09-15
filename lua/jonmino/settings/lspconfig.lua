@@ -21,7 +21,7 @@ return {
             -- Mason must be loaded before its dependents so we need to set it up here.
             -- NOTE: `opts = {}` is the same as calling `require('mason').setup({})`
             { 'mason-org/mason.nvim', opts = {} },
-            'mason-org/mason-lspconfig.nvim',
+            { 'mason-org/mason-lspconfig.nvim' },
             'WhoIsSethDaniel/mason-tool-installer.nvim',
 
             -- Useful status updates for LSP.
@@ -82,6 +82,9 @@ return {
                     --  the definition of its *type*, not where it was *defined*.
                     map('grt', require('telescope.builtin').lsp_type_definitions, '[G]oto [T]ype Definition')
 
+                    map('<leader>td', function()
+                        vim.diagnostic.enable(not vim.diagnostic.is_enabled())
+                    end, '[T]oggle [D]iagnostics')
                     -- The following two autocommands are used to highlight references of the
                     -- word under your cursor when your cursor rests there for a little while.
                     --    See `:help CursorHold` for information about when this is executed
@@ -112,10 +115,6 @@ return {
                         })
                     end
 
-                    -- The following code creates a keymap to toggle inlay hints in your
-                    -- code, if the language server you are using supports them
-                    --
-                    -- This may be unwanted, since they displace some of your code
                     if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
                         map('<leader>th', function()
                             vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
@@ -126,32 +125,38 @@ return {
 
             -- Diagnostic Config
             -- See :help vim.diagnostic.Opts
+            local diagnostic_signs = {
+                [vim.diagnostic.severity.ERROR] = '󰅚 ',
+                [vim.diagnostic.severity.WARN] = '󰀪 ',
+                [vim.diagnostic.severity.INFO] = '󰋽 ',
+                [vim.diagnostic.severity.HINT] = '󰌶 ',
+            }
+            local function diagnostic_format(diagnostic)
+                return string.format('%s (%s): %s', diagnostic.source, diagnostic.code, diagnostic.message)
+            end
             vim.diagnostic.config {
                 severity_sort = true,
+                underline = true,
                 float = { border = 'rounded', source = 'if_many' },
-                underline = { severity = vim.diagnostic.severity.ERROR },
                 signs = vim.g.have_nerd_font and {
-                    text = {
-                        [vim.diagnostic.severity.ERROR] = '󰅚 ',
-                        [vim.diagnostic.severity.WARN] = '󰀪 ',
-                        [vim.diagnostic.severity.INFO] = '󰋽 ',
-                        [vim.diagnostic.severity.HINT] = '󰌶 ',
-                    },
+                    text = diagnostic_signs,
                 } or {},
                 virtual_text = {
+                    spacing = 4,
                     source = 'if_many',
-                    spacing = 2,
-                    format = function(diagnostic)
-                        local diagnostic_message = {
-                            [vim.diagnostic.severity.ERROR] = diagnostic.message,
-                            [vim.diagnostic.severity.WARN] = diagnostic.message,
-                            [vim.diagnostic.severity.INFO] = diagnostic.message,
-                            [vim.diagnostic.severity.HINT] = diagnostic.message,
-                        }
-                        return diagnostic_message[diagnostic.severity]
-                    end,
+                    format = diagnostic_format,
+                },
+                virtual_lines = { -- Display multiline diagnostics as virtual lines
+                    current_line = true,
+                    format = diagnostic_format,
                 },
             }
+
+            -- LSP servers and clients are able to communicate to each other what features they support.
+            --  By default, Neovim doesn't support everything that is in the LSP specification.
+            --  When you add blink.cmp, luasnip, etc. Neovim now has *more* capabilities.
+            --  So, we create new capabilities with blink.cmp, and then broadcast that to the servers.
+            local capabilities = require('blink.cmp').get_lsp_capabilities()
 
             -- Enable the following language servers
             --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
@@ -162,19 +167,10 @@ return {
             --  - capabilities (table): Override fields in capabilities. Can be used to disable certain LSP features.
             --  - settings (table): Override the default settings passed when initializing the server.
             --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
-            local servers = {
-                -- clangd = {},
-                -- gopls = {},
-                -- pyright = {},
-                -- rust_analyzer = {},
-                -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
-                --
-                -- Some languages (like typescript) have entire language plugins that can be useful:
-                --    https://github.com/pmizio/typescript-tools.nvim
-                --
-                -- But for many setups, the LSP (`ts_ls`) will work just fine
-                -- ts_ls = {},
 
+            -- NOTE: Some servers may require an old setup until they are updated. For the full list refer here: https://github.com/neovim/nvim-lspconfig/issues/3705
+            -- These servers will have to be manually set up with require("lspconfig").server_name.setup{}
+            local servers = {
                 -- Shellscript/Bash/Zsh
                 bashls = {
                     filetypes = { 'sh', 'bash', 'zsh' },
@@ -198,6 +194,9 @@ return {
                     settings = {
                         basedpyright = {
                             disableLanguageServices = true,
+                            analysis = {
+                                autoImportCompletions = true,
+                            },
                         },
                     },
                 },
@@ -229,34 +228,17 @@ return {
                 },
                 stylua = {},
             }
-            ---@type MasonLspconfigSettings
-            ---@diagnostic disable-next-line: missing-fields
-            require('mason-lspconfig').setup {
-                automatic_enable = vim.tbl_keys(servers or {}),
-            }
-            -- Ensure the servers and tools above are installed
-            --
-            -- To check the current status of installed tools and/or manually install
-            -- other tools, you can run
-            --    :Mason
-            --
-            -- You can press `g?` for help in this menu.
-            --
-            -- `mason` had to be setup earlier: to configure its options see the
-            -- `dependencies` table for `nvim-lspconfig` above.
-            --
-            -- You can add other tools here that you want Mason to install
-            -- for you, so that they are available from within Neovim.
-            local ensure_installed = vim.tbl_keys(servers or {})
-            -- vim.list_extend(ensure_installed, {})
-            require('mason-tool-installer').setup { ensure_installed = ensure_installed }
-
-            for server_name, config in pairs(servers) do
-                vim.lsp.config(server_name, config)
+            -- The following loop will configure each server with the capabilities we defined above.
+            -- This will ensure that all servers have the same base configuration, but also
+            -- allow for server-specific overrides.
+            for server_name, server_config in pairs(servers) do
+                server_config.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server_config.capabilities or {})
+                vim.lsp.enable(server_name)
+                vim.lsp.config(server_name, server_config)
             end
-
-            -- NOTE: Some servers may require an old setup until they are updated. For the full list refer here: https://github.com/neovim/nvim-lspconfig/issues/3705
-            -- These servers will have to be manually set up with require("lspconfig").server_name.setup{}
+            -- Ensure the servers and tools above are installed
+            local ensure_installed = vim.tbl_keys(servers or {})
+            require('mason-tool-installer').setup { ensure_installed = ensure_installed }
         end,
     },
 
@@ -365,6 +347,13 @@ return {
                 default = { 'lsp', 'path', 'snippets', 'lazydev' },
                 providers = {
                     lazydev = { module = 'lazydev.integrations.blink', score_offset = 100 },
+                    -- On WSL2, blink.cmp may cause the editor to freeze due to a known limitation.
+                    -- To address this issue, uncomment the following configuration:
+                    cmdline = {
+                        enabled = function()
+                            return vim.fn.getcmdtype() ~= ':' or not vim.fn.getcmdline():match "^[%%0-9,'<>%-]*!"
+                        end,
+                    },
                 },
             },
 
@@ -377,7 +366,7 @@ return {
             -- the rust implementation via `'prefer_rust_with_warning'`
             --
             -- See :h blink-cmp-config-fuzzy for more information
-            fuzzy = { implementation = 'lua' },
+            fuzzy = { implementation = 'prefer_rust_with_warning' },
 
             -- Shows a signature help window while you type arguments for a function
             signature = { enabled = true },
