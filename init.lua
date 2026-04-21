@@ -16,6 +16,10 @@ vim.o.showmode = false -- mode displayed in stausline
 vim.schedule(function() -- Shared clipboard
     vim.o.clipboard = 'unnamedplus'
 end)
+vim.o.spell = true
+vim.o.spelllang = 'en_us'
+vim.o.spelloptions = 'camel'
+vim.o.foldenable = false
 vim.o.breakindent = true
 vim.o.undofile = true
 vim.o.ignorecase = true -- case insensitive search
@@ -53,7 +57,6 @@ vim.o.scrolloff = 10
 
 vim.o.confirm = true -- See :help 'confirm'
 
-vim.o.termguicolors = true
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 -- Clear highlights on search when pressing <Esc> in normal mode
@@ -106,7 +109,7 @@ vim.api.nvim_create_autocmd('BufReadPost', {
 })
 
 -- [[ Install `lazy.nvim` plugin manager ]]
---    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
+-- See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
     local lazyrepo = 'https://github.com/folke/lazy.nvim.git'
@@ -123,14 +126,14 @@ rtp:prepend(lazypath)
 -- [[ Configure and install plugins ]]
 require('lazy').setup({
 
-    -- Modular config which imports settings and plugins from subdirectories
-    --  ee `:help lazy.nvim-🔌-plugin-spec` for help
+    -- Modular config which imports settings and plugins from sub directories
+    -- See `:help lazy.nvim-🔌-plugin-spec` for help
     { import = 'jonmino.settings' },
     { import = 'jonmino.plugins' },
 }, {
     ui = {
         -- If you are using a Nerd Font: set icons to an empty table which will use the
-        -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table
+        -- default lazy.nvim defined Nerd Font icons, otherwise define a Unicode icons table
         icons = vim.g.have_nerd_font and {} or {
             cmd = '⌘',
             config = '🛠',
