@@ -1,4 +1,7 @@
 -- This file contains the LSP Configuration and necessary Plugins
+
+---@module 'lazy'
+---@type LazySpec
 return {
     {
         -- `lazydev` configures Lua LSP for your Neovim config, runtime and plugins
@@ -20,16 +23,26 @@ return {
             -- Automatically install LSPs and related tools to stdpath for Neovim
             -- Mason must be loaded before its dependents so we need to set it up here.
             -- NOTE: `opts = {}` is the same as calling `require('mason').setup({})`
-            { 'mason-org/mason.nvim', opts = {} },
+            {
+                'mason-org/mason.nvim',
+                ---@module 'mason.settings'
+                ---@type MasonSettings
+                ---@diagnostic disable-next-line: missing-fields
+                opts = {},
+            },
             { 'mason-org/mason-lspconfig.nvim' },
             'WhoIsSethDaniel/mason-tool-installer.nvim',
 
             -- Useful status updates for LSP.
             -- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
-            { 'j-hui/fidget.nvim', opts = {} },
-
-            -- Allows extra capabilities provided by blink.cmp
-            'saghen/blink.cmp',
+            {
+                'j-hui/fidget.nvim',
+                opts = {
+                    notification = {
+                        override_vim_notify = false,
+                    },
+                },
+            },
         },
         config = function()
             vim.api.nvim_create_autocmd('LspAttach', {
@@ -82,16 +95,14 @@ return {
                     --  the definition of its *type*, not where it was *defined*.
                     map('grt', require('telescope.builtin').lsp_type_definitions, '[G]oto [T]ype Definition')
 
-                    map('<leader>td', function()
-                        vim.diagnostic.enable(not vim.diagnostic.is_enabled())
-                    end, '[T]oggle [D]iagnostics')
+                    map('<leader>td', function() vim.diagnostic.enable(not vim.diagnostic.is_enabled()) end, '[T]oggle [D]iagnostics')
                     -- The following two autocommands are used to highlight references of the
                     -- word under your cursor when your cursor rests there for a little while.
                     --    See `:help CursorHold` for information about when this is executed
                     --
                     -- When you move your cursor, the highlights will be cleared (the second autocommand).
                     local client = vim.lsp.get_client_by_id(event.data.client_id)
-                    if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight) then
+                    if client and client:supports_method('textDocument/documentHighlight', event.buf) then
                         local highlight_augroup = vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
                         vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
                             buffer = event.buf,
@@ -114,15 +125,17 @@ return {
                         })
                     end
 
-                    if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
-                        map('<leader>th', function()
-                            vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
-                        end, '[T]oggle Inlay [H]ints')
+                    if client and client:supports_method('textDocument/inlayHint', event.buf) then
+                        map(
+                            '<leader>th',
+                            function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf }) end,
+                            '[T]oggle Inlay [H]ints'
+                        )
                     end
                 end,
             })
 
-            -- Diagnostic Config
+            -- Diagnostic Config & Keymaps
             -- See :help vim.diagnostic.Opts
             local diagnostic_signs = {
                 [vim.diagnostic.severity.ERROR] = '󰅚 ',
@@ -130,32 +143,37 @@ return {
                 [vim.diagnostic.severity.INFO] = '󰋽 ',
                 [vim.diagnostic.severity.HINT] = '󰌶 ',
             }
-            local function diagnostic_format(diagnostic)
-                return string.format('%s (%s): %s', diagnostic.source, diagnostic.code, diagnostic.message)
-            end
+            local function diagnostic_format(diagnostic) return string.format('%s (%s): %s', diagnostic.source, diagnostic.code, diagnostic.message) end
             vim.diagnostic.config {
+                update_in_insert = false,
                 severity_sort = true,
-                underline = true,
+                underline = { severity = { min = vim.diagnostic.severity.WARN } },
                 float = { border = 'rounded', source = 'if_many' },
+
                 signs = vim.g.have_nerd_font and {
                     text = diagnostic_signs,
                 } or {},
+
                 virtual_text = {
                     spacing = 4,
                     source = 'if_many',
                     format = diagnostic_format,
                 },
-                virtual_lines = { -- Display multiline diagnostics as virtual lines
-                    current_line = true,
-                    format = diagnostic_format,
+
+                -- Display multi-line diagnostics as virtual lines
+                virtual_lines = { current_line = true, format = diagnostic_format },
+
+                -- Auto open the float, so you can easily read the errors when jumping with `[d` and `]d`
+                jump = {
+                    on_jump = function(_, bufnr)
+                        vim.diagnostic.open_float {
+                            bufnr = bufnr,
+                            scope = 'cursor',
+                            focus = false,
+                        }
+                    end,
                 },
             }
-
-            -- LSP servers and clients are able to communicate to each other what features they support.
-            --  By default, Neovim doesn't support everything that is in the LSP specification.
-            --  When you add blink.cmp, luasnip, etc. Neovim now has *more* capabilities.
-            --  So, we create new capabilities with blink.cmp, and then broadcast that to the servers.
-            local capabilities = require('blink.cmp').get_lsp_capabilities()
 
             -- Enable the following language servers
             --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
@@ -169,6 +187,8 @@ return {
 
             -- NOTE: Some servers may require an old setup until they are updated. For the full list refer here: https://github.com/neovim/nvim-lspconfig/issues/3705
             -- These servers will have to be manually set up with require("lspconfig").server_name.setup{}
+
+            ---@type table<string, vim.lsp.Config>
             local servers = {
                 -- Shellscript/Bash/Zsh
                 bashls = {
@@ -208,6 +228,29 @@ return {
                     -- cmd = { ... },
                     -- filetypes = { ... },
                     -- capabilities = {},
+                    on_init = function(client)
+                        client.server_capabilities.documentFormattingProvider = false -- Done using stylua
+                        if client.workspace_folders then
+                            local path = client.workspace_folders[1].name
+                            if path ~= vim.fn.stdpath 'config' and (vim.uv.fs_stat(path .. '/.luarc.json') or vim.uv.fs_stat(path .. '/.luarc.jsonc')) then
+                                return
+                            end
+                        end
+                        client.config.settings.Lua = vim.tbl_deep_extend('force', client.config.settings.Lua, {
+                            runtime = {
+                                version = 'LuaJIT',
+                                path = { 'lua/?.lua', 'lua/?/init.lua' },
+                            },
+                            workspace = {
+                                checkThirdParty = false,
+                                library = vim.tbl_extend('force', vim.api.nvim_get_runtime_file('', true), {
+                                    '${3rd}/luv/library',
+                                    '${3rd}/busted/library',
+                                }),
+                            },
+                        })
+                    end,
+                    ---@type lspconfig.settings.lua_ls
                     settings = {
                         Lua = {
                             completion = {
@@ -217,21 +260,18 @@ return {
                         -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
                         -- diagnostics = { disable = { 'missing-fields' } },
                         format = {
-                            enable = true,
-                            defaultConfig = {
-                                indent_style = 'space',
-                                indent_size = '4',
-                            },
+                            enable = false,
                         },
                     },
                 },
-                stylua = {},
+                stylua = {
+                    settings = { enable = true, defaultConfig = { indent_style = 'space', indent_size = '4' } },
+                },
             }
             -- The following loop will configure each server with the capabilities we defined above.
             -- This will ensure that all servers have the same base configuration, but also
             -- allow for server-specific overrides.
             for server_name, server_config in pairs(servers) do
-                server_config.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server_config.capabilities or {})
                 vim.lsp.enable(server_name)
                 vim.lsp.config(server_name, server_config)
             end
@@ -248,31 +288,27 @@ return {
         keys = {
             {
                 '<leader>f',
-                function()
-                    require('conform').format { async = true, lsp_format = 'fallback' }
-                end,
+                function() require('conform').format { async = true } end,
                 mode = '',
                 desc = '[F]ormat buffer',
             },
         },
+        ---@module 'conform'
+        ---@type conform.setupOpts
         opts = {
             notify_on_error = false,
             format_on_save = function(bufnr)
-                -- Disable "format_on_save lsp_fallback" for languages that don't
-                -- have a well standardized coding style. You can add additional
-                -- languages here or re-enable it for the disabled ones.
-                local disable_filetypes = { c = true, cpp = true, python = true }
-                if disable_filetypes[vim.bo[bufnr].filetype] then
-                    return nil
+                local enabled_filetypes = {
+                    lua = true,
+                }
+                if enabled_filetypes[vim.bo[bufnr].filetype] then
+                    return { timeout_ms = 500 }
                 else
-                    return {
-                        timeout_ms = 500,
-                        lsp_format = 'fallback',
-                    }
+                    return nil
                 end
             end,
+            default_format_opts = { lsp_format = 'fallback' },
             formatters_by_ft = {
-                lua = { 'stylua' },
                 -- Conform can also run multiple formatters sequentially
                 -- python = { "isort", "black" },
                 --
@@ -295,9 +331,7 @@ return {
                     -- Build Step is needed for regex support in snippets.
                     -- This step is not supported in many windows environments.
                     -- Remove the below condition to re-enable on windows.
-                    if vim.fn.has 'win32' == 1 or vim.fn.executable 'make' == 0 then
-                        return
-                    end
+                    if vim.fn.has 'win32' == 1 or vim.fn.executable 'make' == 0 then return end
                     return 'make install_jsregexp'
                 end)(),
                 dependencies = {
@@ -306,9 +340,7 @@ return {
                     --    https://github.com/rafamadriz/friendly-snippets
                     {
                         'rafamadriz/friendly-snippets',
-                        config = function()
-                            require('luasnip.loaders.from_vscode').lazy_load()
-                        end,
+                        config = function() require('luasnip.loaders.from_vscode').lazy_load() end,
                     },
                 },
                 opts = {},
@@ -349,9 +381,7 @@ return {
                     -- On WSL2, blink.cmp may cause the editor to freeze due to a known limitation.
                     -- To address this issue, uncomment the following configuration:
                     cmdline = {
-                        enabled = function()
-                            return vim.fn.getcmdtype() ~= ':' or not vim.fn.getcmdline():match "^[%%0-9,'<>%-]*!"
-                        end,
+                        enabled = function() return vim.fn.getcmdtype() ~= ':' or not vim.fn.getcmdline():match "^[%%0-9,'<>%-]*!" end,
                     },
                 },
             },

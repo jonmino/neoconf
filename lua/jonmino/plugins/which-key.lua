@@ -1,6 +1,11 @@
+---@module 'lazy'
+---@type LazySpec
 return { -- Useful plugin to show you pending keybinds.
     'folke/which-key.nvim',
     event = 'VimEnter', -- Sets the loading event to 'VimEnter'
+    ---@module 'which-key'
+    ---@type wk.Opts
+    ---@diagnostic disable-next-line: missing-fields
     opts = {
         -- delay between pressing a key and opening which-key (milliseconds)
         -- this setting is independent of vim.o.timeoutlen
@@ -43,7 +48,7 @@ return { -- Useful plugin to show you pending keybinds.
         },
         -- Document existing key chains
         spec = {
-            { '<leader>s', group = '[S]earch' },
+            { '<leader>s', group = '[S]earch', mode = { 'n', 'v' } },
             { '<leader>t', group = '[T]oggle' },
             { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
             { 'gr', group = 'LSP Actions', mode = { 'n', 'v' } },

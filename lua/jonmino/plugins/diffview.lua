@@ -1,5 +1,6 @@
--- View Diffs and resolve merge conficts
-
+-- View Diffs and resolve merge conflicts
+---@module 'lazy'
+---@type LazySpec
 return {
     'sindrets/diffview.nvim',
     dependencies = {

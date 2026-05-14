@@ -1,4 +1,6 @@
 -- Setup the Colorscheme for Neovim
+---@module 'lazy'
+---@type LazySpec
 return {
     'catppuccin/nvim',
     name = 'catpuccin',

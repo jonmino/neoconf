@@ -1,3 +1,5 @@
+---@module 'lazy'
+---@type LazySpec
 return {
     { -- Provides better support for toggling comments etc
         'numToStr/Comment.nvim',
